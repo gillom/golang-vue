@@ -13,7 +13,7 @@ import (
 )
 
 var people []model.Person
-// var db *sql.DB
+var database *sql.DB
 
 const (
 	DB_USER     = "dbuser"
@@ -21,9 +21,19 @@ const (
 	DB_NAME     = "testing"
 )
 
+func initDb() {
+	dbinfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
+	DB_USER, DB_PASSWORD, DB_NAME)
+	db, err := sql.Open("postgres", dbinfo)
+	database = db
+	checkErr(err)
+}
+
 func main() {
 
-
+	// Database setup
+	initDb()
+	defer database.Close()	// executed at end of execution of the current function (this case main() wont ever end so database connection will stay alive)
 
 	people = append(people, model.Person{ID: "1", Firstname: "John", Lastname: "Doe", Address: &model.Address{City: "City X", State: "State X"}})
 	people = append(people, model.Person{ID: "2", Firstname: "Koko", Lastname: "Doe", Address: &model.Address{City: "City Z", State: "State Y"}})
@@ -35,7 +45,7 @@ func main() {
 	// Define function handlers for each endpoint
 	router.HandleFunc("/people", GetPeople).Methods("GET")
 	router.HandleFunc("/people/{id}", GetPerson).Methods("GET")
-	router.HandleFunc("/people/{id}", CreatePerson).Methods("POST")
+	router.HandleFunc("/people", CreatePerson).Methods("POST")
 	router.HandleFunc("/people/{id}", DeletePerson).Methods("DELETE")
 
 	// Serve app
@@ -49,12 +59,10 @@ func commonMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// localhost:8080/people
 func GetPeople(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(people) // return all people in json format
 }
 
-// localhost:8080/people/1
 func GetPerson(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	for _, item := range people {
@@ -66,24 +74,24 @@ func GetPerson(w http.ResponseWriter, r *http.Request) {
 
 func CreatePerson(w http.ResponseWriter, r *http.Request) {
 
-	// Open database
-	dbinfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
-	DB_USER, DB_PASSWORD, DB_NAME)
-	db, err := sql.Open("postgres", dbinfo)
+	// Parse request body
+	decoder := json.NewDecoder(r.Body)
+    var person model.Person
+    err := decoder.Decode(&person)
 	checkErr(err)
-	defer db.Close()
 
+	// Insert query
 	var lastInsertId int
-	err = db.QueryRow("INSERT INTO person(id,firstname,lastname) VALUES($1,$2,$3) returning id;", 1, "james", "bond").Scan(&lastInsertId)
+	err = database.QueryRow(
+		`INSERT INTO person(firstname,lastname, age) 
+		VALUES($1,$2,$3) returning id;`, 
+		person.Firstname, person.Lastname, person.Age).Scan(&lastInsertId)
 	checkErr(err)
 	fmt.Println("last inserted id =", lastInsertId)
-		
-	params := mux.Vars(r)
-	var person model.Person
-	_ = json.NewDecoder(r.Body).Decode(&person)
-	person.ID = params["id"]
-	people = append(people, person)
-	json.NewEncoder(w).Encode(people)
+
+	// Return success response
+	result := createRawJsonFromString(`{"sucess":true}`)
+	json.NewEncoder(w).Encode(result)
 }
 
 func DeletePerson(w http.ResponseWriter, r *http.Request) {
@@ -102,4 +110,12 @@ func checkErr(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// https://stackoverflow.com/questions/40429296/converting-string-to-json-or-struct-in-golang
+func createRawJsonFromString(rawJson string) map[string]interface{} {
+    in := []byte(rawJson)
+    var raw map[string]interface{}
+    json.Unmarshal(in, &raw)
+	return raw
 }
