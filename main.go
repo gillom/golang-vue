@@ -64,12 +64,23 @@ func GetPeople(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetPerson(w http.ResponseWriter, r *http.Request) {
+
 	params := mux.Vars(r)
-	for _, item := range people {
-		if item.ID == params["id"] {
-			json.NewEncoder(w).Encode(item)
+	personId := params["id"]
+	
+	var person model.Person
+	sqlStatement := `SELECT * FROM person WHERE id=$1`
+	row := database.QueryRow(sqlStatement, personId)
+	err := row.Scan(&person.ID, &person.Firstname, &person.Lastname, &person.Age)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			fmt.Println("Zero rows found")
+		} else {
+			panic(err)
 		}
 	}
+
+	json.NewEncoder(w).Encode(person)
 }
 
 func CreatePerson(w http.ResponseWriter, r *http.Request) {
