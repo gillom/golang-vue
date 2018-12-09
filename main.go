@@ -43,10 +43,9 @@ func main() {
 	router.Use(commonMiddleware)
 
 	// Define function handlers for each endpoint
-	router.HandleFunc("/people", GetPeople).Methods("GET")
-	router.HandleFunc("/people/{id}", GetPerson).Methods("GET")
-	router.HandleFunc("/people", CreatePerson).Methods("POST")
-	router.HandleFunc("/people/{id}", DeletePerson).Methods("DELETE")
+	router.HandleFunc("/person/{id}", GetPerson).Methods("GET")
+	router.HandleFunc("/person", CreatePerson).Methods("POST")
+	router.HandleFunc("/person/{id}", DeletePerson).Methods("DELETE")
 
 	// Serve app
 	log.Fatal(http.ListenAndServe(":8080", router))
@@ -57,30 +56,6 @@ func commonMiddleware(next http.Handler) http.Handler {
 		w.Header().Add("Content-Type", "application/json")
 		next.ServeHTTP(w, r)
 	})
-}
-
-func GetPeople(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(people) // return all people in json format
-}
-
-func GetPerson(w http.ResponseWriter, r *http.Request) {
-
-	params := mux.Vars(r)
-	personId := params["id"]
-	
-	var person model.Person
-	sqlStatement := `SELECT * FROM person WHERE id=$1`
-	row := database.QueryRow(sqlStatement, personId)
-	err := row.Scan(&person.ID, &person.Firstname, &person.Lastname, &person.Age)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			fmt.Println("Zero rows found")
-		} else {
-			panic(err)
-		}
-	}
-
-	json.NewEncoder(w).Encode(person)
 }
 
 func CreatePerson(w http.ResponseWriter, r *http.Request) {
@@ -101,8 +76,28 @@ func CreatePerson(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("last inserted id =", lastInsertId)
 
 	// Return success response
-	result := createRawJsonFromString(`{"sucess":true}`)
+	result := createRawJsonFromString(fmt.Sprintf(`{"sucess":true, "id": %d}`, lastInsertId))
 	json.NewEncoder(w).Encode(result)
+}
+
+func GetPerson(w http.ResponseWriter, r *http.Request) {
+
+	params := mux.Vars(r)
+	personId := params["id"]
+	
+	var person model.Person
+	sqlStatement := `SELECT * FROM person WHERE id=$1`
+	row := database.QueryRow(sqlStatement, personId)
+	err := row.Scan(&person.ID, &person.Firstname, &person.Lastname, &person.Age)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			fmt.Println("Zero rows found")
+		} else {
+			panic(err)
+		}
+	}
+
+	json.NewEncoder(w).Encode(person)
 }
 
 func DeletePerson(w http.ResponseWriter, r *http.Request) {
