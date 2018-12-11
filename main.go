@@ -46,6 +46,7 @@ func main() {
 	router.HandleFunc("/person/{id}", GetPerson).Methods("GET")
 	router.HandleFunc("/person", CreatePerson).Methods("POST")
 	router.HandleFunc("/person/{id}", DeletePerson).Methods("DELETE")
+	router.HandleFunc("/person/{id}", UpdatePerson).Methods("PATCH")
 
 	// Serve app
 	log.Fatal(http.ListenAndServe(":8080", router))
@@ -98,6 +99,37 @@ func GetPerson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(person)
+}
+
+func UpdatePerson(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	personId := params["id"]
+
+	// Parse request body
+	decoder := json.NewDecoder(r.Body)
+	var person model.Person
+	err := decoder.Decode(&person)
+	checkErr(err)
+
+	var lastInsertId int
+	var personUpdated bool = true
+	sqlStatement := `UPDATE person 
+		SET firstname = $1,
+			lastname = $2,
+			age = $3 
+		WHERE id=$4 returning id`
+	err = database.QueryRow(sqlStatement, person.Firstname, person.Lastname, person.Age, personId).Scan(&lastInsertId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			personUpdated = false
+			fmt.Println("Cannot update person - zero rows found")
+		} else {
+			panic(err)
+		}
+	}
+
+	result := createRawJsonFromString(fmt.Sprintf(`{"updated":%t, "id": %d}`, personUpdated, lastInsertId))
+	json.NewEncoder(w).Encode(result)
 }
 
 func DeletePerson(w http.ResponseWriter, r *http.Request) {
