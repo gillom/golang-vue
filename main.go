@@ -12,7 +12,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var people []model.Person
 var database *sql.DB
 
 const (
@@ -34,10 +33,6 @@ func main() {
 	// Database setup
 	initDb()
 	defer database.Close()	// executed at end of execution of the current function (this case main() wont ever end so database connection will stay alive)
-
-	people = append(people, model.Person{ID: "1", Firstname: "John", Lastname: "Doe", Address: &model.Address{City: "City X", State: "State X"}})
-	people = append(people, model.Person{ID: "2", Firstname: "Koko", Lastname: "Doe", Address: &model.Address{City: "City Z", State: "State Y"}})
-	people = append(people, model.Person{ID: "3", Firstname: "Francis", Lastname: "Sunday"})
 
 	router := mux.NewRouter()
 	router.Use(commonMiddleware)

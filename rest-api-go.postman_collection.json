@@ -6,85 +6,118 @@
 	},
 	"item": [
 		{
-			"name": "people",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "http://localhost:8080/people",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"people"
-					]
+			"name": "Add Person",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "20f2b191-c2d4-4036-82a4-4bf3c26d5e89",
+						"exec": [
+							"var resp = JSON.parse(responseBody);",
+							"pm.globals.set(\"personId\", resp.id)"
+						],
+						"type": "text/javascript"
+					}
 				}
-			},
-			"response": []
-		},
-		{
-			"name": "people/id",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "http://localhost:8080/people/1",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"people",
-						"1"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "people/id",
+			],
 			"request": {
 				"method": "POST",
 				"header": [
 					{
 						"key": "Content-Type",
 						"name": "Content-Type",
-						"value": "application/json",
-						"type": "text"
+						"type": "text",
+						"value": "application/json"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"id\": \"6\",\n    \"firstname\": \"John\",\n    \"lastname\": \"Doe\",\n    \"address\": {\n        \"city\": \"City X\",\n        \"state\": \"State X\"\n    }\n}"
+					"raw": "{\n    \"firstname\": \"Some\",\n    \"lastname\": \"Person\",\n    \"age\": 26\n}"
 				},
 				"url": {
-					"raw": "http://localhost:8080/people/4",
+					"raw": "http://localhost:8080/person",
 					"protocol": "http",
 					"host": [
 						"localhost"
 					],
 					"port": "8080",
 					"path": [
-						"people",
-						"4"
+						"person"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "people/id",
+			"name": "Get Person",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/person/{{personId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"person",
+						"{{personId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Person",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "20f2b191-c2d4-4036-82a4-4bf3c26d5e89",
+						"exec": [
+							"var resp = JSON.parse(responseBody);",
+							"pm.globals.set(\"personId\", resp.id)"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstname\": \"Terry\",\n    \"lastname\": \"McGinnis\",\n    \"age\": 17\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/person/{{personId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"person",
+						"{{personId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Person",
 			"request": {
 				"method": "DELETE",
 				"header": [
@@ -100,15 +133,15 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "http://localhost:8080/people/4",
+					"raw": "http://localhost:8080/person/{{personId}}",
 					"protocol": "http",
 					"host": [
 						"localhost"
 					],
 					"port": "8080",
 					"path": [
-						"people",
-						"4"
+						"person",
+						"{{personId}}"
 					]
 				}
 			},
