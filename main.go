@@ -91,7 +91,7 @@ func GetPerson(w http.ResponseWriter, r *http.Request) {
 	err := row.Scan(&person.ID, &person.Firstname, &person.Lastname, &person.Age)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			fmt.Println("Zero rows found")
+			fmt.Println("Cannot read person - Zero rows found")
 		} else {
 			panic(err)
 		}
@@ -102,13 +102,23 @@ func GetPerson(w http.ResponseWriter, r *http.Request) {
 
 func DeletePerson(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	for index, item := range people {
-		if item.ID == params["id"] {
-			people = append(people[:index], people[index+1:]...) // removing item from a slice
-			break
+	personId := params["id"]
+
+	var lastInsertId int
+	var personDeleted bool = true
+	sqlStatement := `DELETE FROM person WHERE id=$1 returning id`
+	err := database.QueryRow(sqlStatement, personId).Scan(&lastInsertId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			personDeleted = false
+			fmt.Println("Cannot delete person - zero rows found")
+		} else {
+			panic(err)
 		}
 	}
-	json.NewEncoder(w).Encode(people)
+
+	result := createRawJsonFromString(fmt.Sprintf(`{"deleted":%t, "id": %d}`, personDeleted, lastInsertId))
+	json.NewEncoder(w).Encode(result)
 }
 
 

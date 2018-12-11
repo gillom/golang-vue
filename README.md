@@ -7,3 +7,6 @@
   - Pointers
   - Concurrency
   - Vue
+
+## Build & Run
+$ go build && ./rest-api
